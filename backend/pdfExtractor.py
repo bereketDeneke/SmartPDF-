@@ -7,9 +7,9 @@
 from pdf2image import convert_from_bytes
 
 poppler_path  = r"C:\poppler-22.04.0\Library\bin"
-def extract(file, folderPath = './Assets/', outputFileName = 'asset'):
+def extract(file):
     try:   
-        images = convert_from_bytes(pdf_file = file, output_file=outputFileName, fmt="png", poppler_path=poppler_path, output_folder=folderPath,)
+        images = convert_from_bytes(pdf_file = file, fmt="png")
         return images
     except Exception as e:
         raise Exception(e)

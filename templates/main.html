@@ -57,10 +57,10 @@
                     <div class="row text-center">
                       <select name="lang" class="form-select form-select-lg mb-3" aria-label=".form-select-lg example">
                         <option value="" disabled selected>Select a language</option>
+                        <option value="arabic">Arabic <i class="fas fa-flag"></i></option>
                         <option value="amharic">Amharic <i class="fas fa-flag"></i></option>
                         <option value="english">English <i class="fas fa-flag"></i></option>
                         <option value="spanish">Spanish <i class="fas fa-flag"></i></option>
-                        <option value="arabic">Arabic <i class="fas fa-flag"></i></option>
                       </select>
         
                       <select class="form-select form-select-lg mb-3" name="request_type" aria-label=".form-select-lg example">
@@ -142,7 +142,7 @@
         height: 60px; /* Height of the footer */
       }
 </style>
-
+<!-- <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script> -->
 <script>
 function uploadFile(file, lang, request, limit) {
   var formData = new FormData();
@@ -154,9 +154,9 @@ function uploadFile(file, lang, request, limit) {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/upload', true);
   xhr.onreadystatechange = function() {
+    loadingOverlay.style.display = 'none';
+    uploadButton.disabled = false;
     if (xhr.readyState == 4 && xhr.status == 200) {  
-      loadingOverlay.style.display = 'none';
-      uploadButton.disabled = false;
       if(request == 'summary'){
         var response = xhr.responseText;
         var responseDiv = document.getElementById('response');
@@ -166,14 +166,28 @@ function uploadFile(file, lang, request, limit) {
         format = format.replaceAll('\\u2019','');
         responseDiv.innerHTML = format;
       }else{
-        var blob = new Blob([xhr.response], { type: 'application/octet-stream' });
+        if(xhr.responseText.includes("Error")){
+          console.error(xhr.responseText);
+          return;
+        }
+        // Assume that the compressed data is stored in an ArrayBuffer named compressedData
+        // Convert the ArrayBuffer to a Uint8Array
+        base64Data = xhr.response;
+        const decompressedData = atob(base64Data);
+        const uint8Array = new Uint8Array(decompressedData.length);
+        for (let i = 0; i < decompressedData.length; i++) {
+          uint8Array[i] = decompressedData.charCodeAt(i);
+        }
+        const blob = new Blob([uint8Array], { type: 'application/pdf; charset=utf-8;' });
         var downloadLink = document.createElement('a');
-        downloadLink.href = window.URL.createObjectURL(blob);
+        var url = window.URL.createObjectURL(blob);
+        downloadLink.href = url;
         downloadLink.download = 'Scan2PDF+.pdf';
         downloadLink.click();
+        URL.revokeObjectURL(url);
       }
       console.log('File uploaded successfully');
-    }else{
+    }else if(xhr.status == 505){
       console.warn("505 Internal Server Error.")
     }
   };
@@ -193,10 +207,13 @@ uploadButton.addEventListener('click', function() {
   loadingOverlay.style.display = 'block';
   uploadButton.disabled = true;
   
-  if(file && lang && request && limit)
+  if(file && lang && request && limit){
     uploadFile(file, lang, request, limit);
-  else
+  }else{
     console.error('All inputs are required!!!');
+    loadingOverlay.style.display = 'none';
+    uploadButton.disabled = false;
+  }
 });
 
 </script>

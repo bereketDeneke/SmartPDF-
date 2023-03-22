@@ -1,1 +1,2 @@
 # SmartPDF
+<!-- gunicorn wsgi:application -->

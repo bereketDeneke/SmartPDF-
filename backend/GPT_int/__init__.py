@@ -13,6 +13,7 @@ class Summarizer:
     def __process(self, customPrompt):
         
         defaultPrompt = f"Summarize the following contents in just {self.__chunk_len} words only:"
+        # defaultPrompt = f"generate imagery description for the following contents in just {self.__chunk_len} words only:"
         if customPrompt is not None:
             defaultPrompt = f"{customPrompt}. write your response in just {self.__chunk_len} words only: "
 
@@ -31,9 +32,13 @@ class Summarizer:
         except Exception as e:
             print("Warning: ", str(e))
             if "This model's maximum context length is " in str(e):
-                self.__max_word_len -= 800
-                self.__groups = [' '.join(self.__words[i:i+self.__max_word_len]) for i in range(0, len(self.__words), self.__max_word_len)]
-            self.__process()
+                b = [word for word in str(e).split() if word.isdigit()]
+                limit, currVal = b
+                diff = currVal - limit
+                self.__summary = self.__summary[:-diff]
+                # self.__max_word_len -= 800
+                # self.__groups = [' '.join(self.__words[i:i+self.__max_word_len]) for i in range(0, len(self.__words), self.__max_word_len)]
+                self.__process(customPrompt)
  
     
     def run(self, content, LANGUAGE='eng', wordLimit = 150, customPrompt=None, callback=None):
@@ -41,9 +46,9 @@ class Summarizer:
         self.__chunk_len = wordLimit
         
         # 500 is a normalizer incase the summary goes beyond the limit which happens most often
-        normalizer = 400
+        normalizer = 500
         if LANGUAGE != 'eng':
-            normalizer = 600
+            normalizer = 700
         
         self.__max_word_len -= self.__chunk_len + normalizer
 
